@@ -32,8 +32,8 @@ htmlcov/
 env/
 venv/
 ENV/
-env.bak/
-venv.bak/
+env.bak
+venv.bak
 .spyderproject
 .spyproject
 .ropeproject
@@ -81,3 +81,4 @@ celerybeat-schedule
 celerybeat-schedule-wal
 
 *.db
+sent_emails/
