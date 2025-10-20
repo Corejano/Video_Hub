@@ -1,9 +1,5 @@
 # apps/accounts/urls.py
 
-"""
-URL configuration for accounts application.
-"""
-
 from django.urls import path
 from . import views
 
@@ -14,8 +10,6 @@ urlpatterns = [
     path('register/', views.UserRegistrationView.as_view(), name='register'),
     path('login/', views.UserLoginView.as_view(), name='login'),
     path('logout/', views.UserLogoutView.as_view(), name='logout'),
-
-    path('', views.home_view, name='home'),
 
     # Email verification URLs
     path('verify-email/<str:token>/', views.verify_email, name='verify_email'),

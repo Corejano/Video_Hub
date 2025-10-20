@@ -103,9 +103,9 @@ class MovieAdmin(admin.ModelAdmin):
     readonly_fields = ('created_at', 'updated_at', 'views_count')
 
     def get_queryset(self, request):
-        """Optimize queryset with select_related and prefetch_related."""
+        """Optimize queryset with select_related"""
         qs = super().get_queryset(request)
-        return qs.select_related('category').prefetch_related('ratings')
+        return qs.select_related('category')
 
     def poster_preview(self, obj):
         """Display poster preview in admin."""

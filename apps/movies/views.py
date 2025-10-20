@@ -29,7 +29,7 @@ class MovieListView(ListView):
         """
         Get filtered and sorted queryset of movies.
         """
-        queryset = Movie.objects.select_related('category').prefetch_related('ratings')
+        queryset = Movie.objects.select_related('category')
 
         # Filter by category
         category_slug = self.request.GET.get('category')
@@ -40,13 +40,6 @@ class MovieListView(ListView):
         year = self.request.GET.get('year')
         if year and year.isdigit():
             queryset = queryset.filter(year=int(year))
-
-        # Filter by rating
-        min_rating = self.request.GET.get('rating')
-        if min_rating and min_rating.replace('.', '').isdigit():
-            queryset = queryset.filter(
-                ratings__score__gte=float(min_rating)
-            ).distinct()
 
         # Search query
         search_query = self.request.GET.get('q')
@@ -113,10 +106,7 @@ class MovieDetailView(DetailView):
 
     def get_queryset(self) -> QuerySet:
         """Optimize queryset with related data."""
-        return Movie.objects.select_related('category').prefetch_related(
-            'ratings',
-            'comments__user'
-        )
+        return Movie.objects.select_related('category')
 
     def get_object(self, queryset=None) -> Movie:
         """Get movie object and increment views counter."""
@@ -146,7 +136,7 @@ class MovieDetailView(DetailView):
                     user=self.request.user
                 )
                 context['user_rating'] = user_rating
-            except:
+            except Rating.DoesNotExist:
                 context['user_rating'] = None
 
             # Check if user has commented
@@ -157,7 +147,7 @@ class MovieDetailView(DetailView):
                     user=self.request.user
                 )
                 context['user_comment'] = user_comment
-            except:
+            except Comment.DoesNotExist:
                 context['user_comment'] = None
 
         # Add comments
@@ -188,7 +178,7 @@ class CategoryMoviesView(ListView):
         self.category = get_object_or_404(Category, slug=self.kwargs['slug'])
         return Movie.objects.filter(
             category=self.category
-        ).select_related('category').prefetch_related('ratings')
+        ).select_related('category')
 
     def get_context_data(self, **kwargs: Any) -> Dict[str, Any]:
         """Add category to context."""
@@ -211,7 +201,7 @@ def search_movies(request: HttpRequest) -> HttpResponse:
             Q(description__icontains=query) |
             Q(director__icontains=query) |
             Q(actors__icontains=query)
-        ).select_related('category').prefetch_related('ratings')[:20]
+        ).select_related('category')[:20]
 
     context = {
         'movies': movies,

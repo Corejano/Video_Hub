@@ -36,11 +36,6 @@ from .tasks import send_verification_email, send_password_reset_email
 User = get_user_model()
 
 
-def home_view(request):
-    """Simple home page view"""
-    return render(request, 'movies/home.html')
-
-
 class UserRegistrationView(CreateView):
     """
     View for user registration.
