@@ -6,22 +6,24 @@ Views for player application.
 
 from typing import Any, Dict
 
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpRequest, HttpResponse, JsonResponse, FileResponse, Http404
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.views import View
 from django.views.decorators.http import require_POST
 from django.views.generic import ListView
 import json
 
 from apps.movies.models import Movie
+from apps.subscribe.utils import can_watch_video, get_daily_watch_limit, update_watch_time
 from .models import WatchHistory
 
 
-class VideoPlayerView(View):
+class VideoPlayerView(LoginRequiredMixin, View):
     """
-    View for displaying video player.
+    View for displaying video player with subscription checks.
     """
 
     template_name = 'player/video_player.html'
@@ -33,18 +35,30 @@ class VideoPlayerView(View):
             slug=slug
         )
 
-        # Get user's watch progress if authenticated
-        watch_history = None
-        if request.user.is_authenticated:
-            watch_history = WatchHistory.objects.filter(
-                user=request.user,
-                movie=movie
-            ).first()
+        # Check if user can watch
+        can_watch, message = can_watch_video(request.user)
+
+        if not can_watch:
+            messages.error(request, message)
+            return redirect('movies:movie_detail', slug=slug)
+
+        # Get user's watch progress
+        watch_history = WatchHistory.objects.filter(
+            user=request.user,
+            movie=movie
+        ).first()
+
+        # Get watch limit info
+        watched_seconds, remaining_seconds, has_subscription = get_daily_watch_limit(request.user)
 
         context = {
             'movie': movie,
             'watch_history': watch_history,
             'has_video': bool(movie.video_url or movie.video_file),
+            'has_subscription': has_subscription,
+            'remaining_seconds': remaining_seconds,
+            'remaining_minutes': remaining_seconds // 60 if remaining_seconds > 0 else 0,
+            'watched_today': watched_seconds,
         }
 
         return render(request, self.template_name, context)
@@ -108,13 +122,14 @@ class StreamVideoView(View):
 @login_required
 def save_progress(request: HttpRequest) -> JsonResponse:
     """
-    Save user's video playback progress.
+    Save user's video playback progress and update daily watch time.
     """
     try:
         data = json.loads(request.body)
         movie_id = data.get('movie_id')
         progress = data.get('progress', 0)
         duration = data.get('duration', 0)
+        watch_time = data.get('watch_time', 0)  # Actual time watched since last save
 
         movie = get_object_or_404(Movie, id=movie_id)
 
@@ -125,14 +140,23 @@ def save_progress(request: HttpRequest) -> JsonResponse:
             defaults={
                 'progress': int(progress),
                 'duration': int(duration),
-                'completed': progress >= duration * 0.9  # 90% watched = completed
+                'completed': progress >= duration * 0.9
             }
         )
+
+        # Update daily watch time
+        if watch_time > 0:
+            update_watch_time(request.user, watch_time)
+
+        # Get updated watch limit info
+        watched_seconds, remaining_seconds, has_subscription = get_daily_watch_limit(request.user)
 
         return JsonResponse({
             'success': True,
             'progress': watch_history.progress,
-            'percentage': watch_history.get_progress_percentage()
+            'percentage': watch_history.get_progress_percentage(),
+            'remaining_seconds': remaining_seconds,
+            'has_subscription': has_subscription
         })
 
     except Exception as e:

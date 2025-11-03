@@ -14,6 +14,7 @@ from django.contrib.auth.views import (
     LogoutView,
     PasswordResetView,
 )
+from django.contrib.auth.forms import PasswordChangeForm
 from django.views import View
 from django.contrib import messages
 from django.http import HttpRequest, HttpResponse
@@ -253,11 +254,10 @@ class UserProfileView(DetailView):
         context = super().get_context_data(**kwargs)
         user = self.object
 
-        # context['ratings_count'] = user.get_ratings_count()
-        # context['comments_count'] = user.get_comments_count()
-
-        # Get recent ratings (will be implemented when ratings app is ready)
-        # context['recent_ratings'] = user.ratings.select_related('movie')[:5]
+        # Add ratings and comments
+        from apps.ratings.models import Rating, Comment
+        context['ratings'] = Rating.objects.filter(user=user).select_related('movie')[:5]
+        context['comments'] = Comment.objects.filter(user=user).select_related('movie')[:5]
 
         return context
 
@@ -266,7 +266,7 @@ class UserProfileUpdateView(LoginRequiredMixin, UpdateView):
     """
     View for updating user profile.
 
-    Allows users to update their profile information.
+    Allows users to update their profile information and password.
     """
 
     model = User
@@ -280,6 +280,44 @@ class UserProfileUpdateView(LoginRequiredMixin, UpdateView):
     def get_success_url(self) -> str:
         """Redirect to user's profile after successful update."""
         return reverse_lazy('accounts:profile', kwargs={'username': self.request.user.username})
+
+    def post(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        """Handle POST request for both profile and password forms."""
+        self.object = self.get_object()
+        form_type = request.POST.get('form_type')
+
+        if form_type == 'password':
+            # Handle password change
+            password_form = PasswordChangeForm(user=request.user, data=request.POST)
+
+            if password_form.is_valid():
+                password_form.save()
+                # Update session to prevent logout
+                from django.contrib.auth import update_session_auth_hash
+                update_session_auth_hash(request, password_form.user)
+                messages.success(request, _('Your password has been changed successfully.'))
+                return redirect(self.get_success_url())
+            else:
+                messages.error(request, _('Please correct the errors in the password form.'))
+                profile_form = self.form_class(instance=self.object)
+                return self.render_to_response(self.get_context_data(
+                    form=profile_form,
+                    password_form=password_form
+                ))
+        else:
+            # Handle profile update with files
+            form = self.form_class(request.POST, request.FILES, instance=self.object)
+            if form.is_valid():
+                return self.form_valid(form)
+            else:
+                return self.form_invalid(form)
+
+    def get_context_data(self, **kwargs: Any) -> Dict[str, Any]:
+        """Add password form to context."""
+        context = super().get_context_data(**kwargs)
+        if 'password_form' not in context:
+            context['password_form'] = PasswordChangeForm(user=self.request.user)
+        return context
 
     def form_valid(self, form: UserProfileUpdateForm) -> HttpResponse:
         """Handle successful profile update."""

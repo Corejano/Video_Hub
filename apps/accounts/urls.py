@@ -1,5 +1,4 @@
 # apps/accounts/urls.py
-
 from django.urls import path
 from . import views
 
@@ -20,8 +19,8 @@ urlpatterns = [
     path('password-reset/', views.CustomPasswordResetView.as_view(), name='password_reset'),
     path('password-reset/done/', views.password_reset_done, name='password_reset_done'),
     path('password-reset-confirm/<str:token>/',
-         views.CustomPasswordResetConfirmView.as_view(),
-         name='password_reset_confirm'),
+             views.CustomPasswordResetConfirmView.as_view(),
+             name='password_reset_confirm'),
     path('password-reset-complete/', views.password_reset_complete, name='password_reset_complete'),
 
     # Profile URLs
