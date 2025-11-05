@@ -30,6 +30,14 @@ app.conf.beat_schedule = {
         'task': 'apps.accounts.tasks.cleanup_expired_tokens',
         'schedule': crontab(hour=1, minute=0),
     },
+    'cleanup-pending-payments': {
+        'task': 'apps.payment.tasks.cleanup_pending_payments',
+        'schedule': crontab(hour=2, minute=30),  # Каждый день в 2:30
+    },
+    'send-subscription-expiry-reminders': {
+        'task': 'apps.payment.tasks.send_subscription_expiry_reminder',
+        'schedule': crontab(hour=10, minute=0),  # Каждый день в 10:00
+    },
 }
 
 

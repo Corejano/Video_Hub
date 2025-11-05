@@ -189,6 +189,16 @@ SITE_URL = 'http://localhost:8000'
 #     }
 # }
 
+# Stripe API keys
+STRIPE_PUBLIC_KEY = config('STRIPE_PUBLIC_KEY', default='')
+
+STRIPE_SECRET_KEY = config('STRIPE_SECRET_KEY', default='')
+
+STRIPE_WEBHOOK_SECRET = config('STRIPE_WEBHOOK_SECRET', default='')
+
+# Subscription pricing
+SUBSCRIPTION_PRICE_PER_MONTH = 12.00  # USD
+
 # Security settings for production
 if not DEBUG:
     SECURE_SSL_REDIRECT = True
