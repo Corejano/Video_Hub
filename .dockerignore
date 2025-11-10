@@ -1,0 +1,72 @@
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Virtual environment
+venv/
+env/
+ENV/
+
+# Environment variables
+.env
+.env.local
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+.ropeproject/
+
+# Django
+*.log
+db.sqlite3
+db.sqlite3-journal
+
+# Celery
+celerybeat-schedule
+celerybeat-schedule.db
+celerybeat.pid
+celerybeat-schedule-shm
+celerybeat-schedule-wal
+
+# Media files (только для разработки, на проде обычно используют S3/CDN)
+# media/
+
+# Static files (будут собираться при сборке)
+staticfiles/
+
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
+.tox/
+
+# Documentation
+*.md
+docs/
+
+# Docker
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# Sent emails (для тестирования)
+sent_emails/
+
+# Временные файлы
+*.tmp
+*.bak

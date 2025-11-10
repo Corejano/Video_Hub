@@ -160,6 +160,9 @@ class StripeWebhookView(View):
         # Get payment intent
         payment_intent_id = session.payment_intent
 
+        # Check payment status from session
+        payment_status = session.payment_status  # 'paid', 'unpaid', or 'no_payment_required'
+
         # Create or update payment record
         payment, created = Payment.objects.get_or_create(
             stripe_payment_intent_id=payment_intent_id,
@@ -169,15 +172,22 @@ class StripeWebhookView(View):
                 'amount': session.amount_total / 100,  # Convert from cents
                 'currency': session.currency.upper(),
                 'subscription_months': subscription_months,
-                'status': 'processing',
+                'status': 'succeeded' if payment_status == 'paid' else 'processing',
                 'description': f'VideoHub Premium Subscription - {subscription_months} month(s)',
             }
         )
 
         if not created:
             payment.stripe_checkout_session_id = session.id
-            payment.status = 'processing'
-            payment.save(update_fields=['stripe_checkout_session_id', 'status', 'updated_at'])
+            if payment_status == 'paid' and payment.status != 'succeeded':
+                payment.mark_as_succeeded()
+            else:
+                payment.status = 'processing'
+                payment.save(update_fields=['stripe_checkout_session_id', 'status', 'updated_at'])
+
+        # If payment is already paid, trigger subscription activation
+        if payment_status == 'paid' and payment.is_successful():
+            process_successful_payment.delay(payment.id)
 
     def _handle_payment_intent_succeeded(self, event: stripe.Event) -> None:
         """Handle payment_intent.succeeded event."""

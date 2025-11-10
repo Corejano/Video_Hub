@@ -18,6 +18,7 @@ DEBUG = config('DEBUG', default=True, cast=bool)
 
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1', cast=lambda v: [s.strip() for s in v.split(',')])
 
+CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='localhost,127.0.0.1', cast=lambda v: [s.strip() for s in v.split(',')])
 
 # Application definition
 
@@ -201,7 +202,6 @@ SUBSCRIPTION_PRICE_PER_MONTH = 12.00  # USD
 
 # Security settings for production
 if not DEBUG:
-    SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_BROWSER_XSS_FILTER = True
