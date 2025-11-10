@@ -83,3 +83,4 @@ coverage
 celerybeat-schedule
 celerybeat-schedule-wal
 sent_emails/
+.exe 
