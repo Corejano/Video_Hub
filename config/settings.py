@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     # Local apps
+    'django_celery_beat',
     'apps.accounts',
     'apps.core',
     'apps.movies',
